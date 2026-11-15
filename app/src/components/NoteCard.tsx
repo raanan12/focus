@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { Text, AvatarStack } from './ui';
-import { ThemeContext, memberColors, noteTheme, radius, space, useTheme } from '../lib/theme';
+import { ThemeContext, memberColors, noteAccent, noteTheme, radius, space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import type { Member, Note, Task } from '../lib/types';
 
@@ -21,6 +21,7 @@ export function NoteCard({ note, tasks, members, unread, onPress, onLongPress, w
         gap: space.sm, opacity: pressed ? 0.85 : 1, shadowColor: bg, shadowOpacity: 0.5, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 2 })}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}>
         <Text strong numberOfLines={2} style={{ flex: 1, color: th.text }}>{note.title || t('untitled')}</Text>
+        {real.dark && <View accessibilityLabel={note.color} style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: noteAccent(note.color), marginTop: 5 }} />}
         {unread && <View accessibilityLabel="updated" style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: th.accent, marginTop: 6 }} />}
       </View>
       <View style={{ gap: space.xs, flex: 1 }}>

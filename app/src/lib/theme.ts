@@ -52,13 +52,23 @@ export const font = { caption: 13, body: 16, title: 22, hero: 32 };
 export const ThemeContext = createContext<Theme>(lightTheme);
 export const useTheme = () => useContext(ThemeContext);
 
+const whiteNotes = Object.fromEntries(NOTE_COLORS.map((c) => [c, '#FFFFFF'])) as Record<NoteColor, string>;
+
 /**
- * Notes stay light in dark mode (pastel paper on the navy app background), so everything drawn ON a note
+ * In dark mode notes are plain white paper on the navy app background, so everything drawn ON a note
  * uses the light palette's dark ink. Wrap note surfaces in ThemeContext.Provider with this theme.
+ * (The real dark theme keeps the pastel colors so the color picker swatches stay recognisable.)
  */
 export function noteTheme(th: Theme): Theme {
   if (!th.dark) return th;
-  return { ...lightTheme, dark: false, bg: th.bg, surface: 'rgba(255,255,255,0.55)', note: noteLight };
+  return { ...lightTheme, dark: false, bg: th.bg, surface: '#F1F4F8', note: whiteNotes };
+}
+
+/** A stronger tone of a note's color — the small marker that keeps color-coding visible on white notes. */
+export function noteAccent(color: NoteColor): string {
+  const hex = noteLight[color].slice(1);
+  const ch = [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * 0.72));
+  return `rgb(${ch[0]}, ${ch[1]}, ${ch[2]})`;
 }
 
 export function resolveTheme(pref: 'auto' | 'light' | 'dark', system: ReturnType<typeof useColorScheme>): Theme {

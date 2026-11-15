@@ -1,5 +1,63 @@
 @import "tailwindcss";
 
-:root { color-scheme: light dark; }
-
 @custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* Design tokens — mirror the mobile app: navy + teal in dark, soft blue-gray + deep teal in light. */
+:root {
+  color-scheme: light dark;
+  --bg: #edf3f7;
+  --surface: #ffffff;
+  --surface-2: #f3f7fa;
+  --ink: #1d3146;
+  --muted: #5f7285;
+  --faint: #8ea0b1;
+  --line: #dce5ec;
+  --brand: #2c87a8;
+  --brand-soft: #e1f0f5;
+  --on-brand: #ffffff;
+  --good: #1e9e6a;
+  --warn: #d98e1f;
+  --bad: #e5484d;
+  --shadow: 0 1px 2px rgba(29, 49, 70, 0.05), 0 10px 30px rgba(29, 49, 70, 0.07);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d3146;
+    --surface: #284058;
+    --surface-2: #223850;
+    --ink: #f2f7fa;
+    --muted: #a9b9c8;
+    --faint: #7d93a8;
+    --line: rgba(242, 247, 250, 0.1);
+    --brand: #4dd0d6;
+    --brand-soft: rgba(77, 208, 214, 0.14);
+    --on-brand: #12263a;
+    --good: #3ddc97;
+    --warn: #f5b94a;
+    --bad: #ff6b70;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 10px 30px rgba(0, 0, 0, 0.18);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --shadow-card: var(--shadow);
+  --font-sans: var(--font-heebo), -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-heebo), -apple-system, "Segoe UI", Arial, sans-serif; }
+::selection { background: var(--brand); color: var(--on-brand); }
+*:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

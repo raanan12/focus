@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/lib/supabase';
+import { AuthShell, Button, inputCls } from './ui';
 
 // Second factor (TOTP). The database refuses every admin RPC until the session is aal2.
 export function Mfa({ onDone }: { onDone: () => void }) {
@@ -35,20 +36,22 @@ export function Mfa({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-8">
-      <h1 className="text-2xl font-bold">אימות דו-שלבי</h1>
+    <AuthShell title="אימות דו-שלבי" subtitle={enroll ? 'הגדרה חד-פעמית' : 'הזינו את הקוד מאפליקציית האימות'}>
       {enroll ? (
         <>
-          <p className="text-sm text-neutral-500">סרקו באפליקציית אימות (Google Authenticator / 1Password / Authy) והזינו את הקוד.</p>
-          <div className="self-center rounded-2xl bg-white p-4"><QRCodeSVG value={enroll.uri} size={176} /></div>
-          <p className="break-all text-center text-xs text-neutral-500" dir="ltr">{enroll.secret}</p>
+          <p className="text-center text-sm text-muted">סרקו באפליקציית אימות (Google Authenticator / 1Password / Authy) והזינו את הקוד בן 6 הספרות.</p>
+          <div className="mx-auto w-fit rounded-2xl bg-white p-4 shadow-card"><QRCodeSVG value={enroll.uri} size={176} /></div>
+          <div className="rounded-2xl bg-surface-2 p-3 text-center">
+            <p className="mb-1 text-xs text-muted">או הזינו ידנית את המפתח:</p>
+            <p className="break-all font-mono text-xs font-semibold select-all" dir="ltr">{enroll.secret}</p>
+          </div>
         </>
-      ) : <p className="text-sm text-neutral-500">הזינו את הקוד מאפליקציית האימות.</p>}
-      <input className="rounded-2xl bg-neutral-100 p-4 text-center text-2xl tracking-[0.5em] dark:bg-neutral-900" dir="ltr" inputMode="numeric" maxLength={6}
-        autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
-      <button disabled={busy || code.length !== 6 || !factorId} onClick={verify} className="rounded-full bg-black p-4 font-bold text-white disabled:opacity-40 dark:bg-white dark:text-black">אימות</button>
-      {err && <p role="alert" className="text-sm text-red-600">{err}</p>}
-      <button onClick={() => supabase.auth.signOut()} className="text-sm text-neutral-500 underline">התנתקות</button>
-    </main>
+      ) : null}
+      <input className={`${inputCls} text-center text-2xl tracking-[0.5em]`} dir="ltr" inputMode="numeric" maxLength={6}
+        autoComplete="one-time-code" placeholder="••••••" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
+      <Button variant="primary" className="w-full !py-3" disabled={busy || code.length !== 6 || !factorId} onClick={verify}>אימות</Button>
+      {err && <p role="alert" className="text-center text-sm font-medium text-bad">{err}</p>}
+      <button onClick={() => supabase.auth.signOut()} className="block w-full text-center text-sm text-muted underline">התנתקות</button>
+    </AuthShell>
   );
 }
