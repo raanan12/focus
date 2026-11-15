@@ -43,6 +43,11 @@ function Login() {
     setBusy(false);
     if (error) setErr('לא ניתן לשלוח קוד'); else setSent(true);
   };
+  const google = async () => {
+    setBusy(true); setErr('');
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    if (error) { setBusy(false); setErr('לא ניתן להתחבר עם Google'); }
+  };
   const verify = async () => {
     setBusy(true); setErr('');
     const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
@@ -55,6 +60,8 @@ function Login() {
       <h1 className="text-3xl font-bold">פוקוס · ניהול</h1>
       {!sent ? (
         <>
+          <button disabled={busy} onClick={google} className="rounded-full bg-black p-4 font-bold text-white disabled:opacity-40 dark:bg-white dark:text-black">המשך עם Google</button>
+          <p className="text-center text-sm text-neutral-500">או</p>
           <input className="rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-900" dir="ltr" type="email" autoComplete="email"
             placeholder="אימייל מנהל" value={email} onChange={(e) => setEmail(e.target.value)} />
           <button disabled={busy || !email} onClick={send} className="rounded-full bg-black p-4 font-bold text-white disabled:opacity-40 dark:bg-white dark:text-black">שלחו לי קוד</button>

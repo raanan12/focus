@@ -13,7 +13,10 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": [
+        "applinks:focus-neon-nu.vercel.app"
+      ]
     },
     "android": {
       "package": "com.focus.notes",
