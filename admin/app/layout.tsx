@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Duo · ניהול',
+  title: 'פוקוס · ניהול',
   robots: { index: false, follow: false },
 };
 

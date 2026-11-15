@@ -57,7 +57,7 @@ export function Dashboard() {
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-6 md:p-10">
       <header className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Duo · ניהול</h1>
+        <h1 className="text-3xl font-bold">פוקוס · ניהול</h1>
         <div className="flex items-center gap-3">
           <button onClick={() => { void loadStats(); void loadUsers(); }} className="rounded-full bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-900">רענון</button>
           <button onClick={() => supabase.auth.signOut()} className="rounded-full bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-900">התנתקות</button>

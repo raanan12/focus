@@ -6,6 +6,7 @@ import * as Crypto from 'expo-crypto';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { purchasesLogIn, purchasesLogOut } from './purchases';
 import { store } from './store';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -37,8 +38,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (session?.user) void store.start(session.user.id);
-    else store.stop();
+    if (session?.user) {
+      // accept any note shared to this e-mail before it signed up, then start syncing
+      void (async () => {
+        try { await supabase.rpc('claim_email_invites'); } catch {}
+        void purchasesLogIn(session.user.id);
+        await store.start(session.user.id);
+      })();
+    }
+    else { store.stop(); void purchasesLogOut(); }
   }, [session?.user?.id]);
 
   const value: Auth = {

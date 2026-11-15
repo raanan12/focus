@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, LayoutAnimation, Platform, Pressable, ScrollView, Share, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, LayoutAnimation, Platform, Pressable, ScrollView, Share, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
+import { StatusBar } from 'expo-status-bar';
 import { AvatarStack, Button, IconButton, Input, MenuRow, Sheet, Text } from '../components/ui';
 import { TaskRow } from '../components/TaskRow';
 import { ShareSheet } from '../components/ShareSheet';
-import { NOTE_COLORS, radius, space, useTheme } from '../lib/theme';
-import { useI18n } from '../lib/i18n';
+import { ThemeContext, memberColors, noteTheme, radius, space, useTheme } from '../lib/theme';
+import { ColorPicker } from '../components/ColorPicker';
+import { localeFor, useI18n } from '../lib/i18n';
+import { noteToWhatsApp } from '../lib/shareText';
 import { store, useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
 import type { Task } from '../lib/types';
@@ -17,7 +20,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
 
 export function NoteScreen({ route, navigation }: { route: any; navigation: any }) {
   const { noteId, focusTitle, openShare } = route.params as { noteId: string; focusTitle?: boolean; openShare?: boolean };
-  const th = useTheme(); const { t } = useI18n(); const insets = useSafeAreaInsets();
+  const realTheme = useTheme(); const th = useMemo(() => noteTheme(realTheme), [realTheme]); const { t, lang, rtl } = useI18n(); const insets = useSafeAreaInsets();
   const { session } = useAuth(); const me = session!.user.id;
   const note = useStore((s) => s.notes[noteId]);
   const tasks = useStore((s) => s.tasks[noteId]) ?? [];
@@ -52,6 +55,7 @@ export function NoteScreen({ route, navigation }: { route: any; navigation: any 
   if (!note) return null;
   const bg = th.note[note.color];
   const shared = members.length > 1;
+  const colors = useMemo(() => memberColors(members), [members]);
 
   const animate = () => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
@@ -83,6 +87,13 @@ export function NoteScreen({ route, navigation }: { route: any; navigation: any 
     void Share.share({ message: lines.join('\n') });
   };
 
+  const shareWhatsApp = async () => {
+    const msg = encodeURIComponent(noteToWhatsApp({
+      title: note.title || t('untitled'), open, done, locale: localeFor(lang), dueLabel: t('due'), footer: t('appName'),
+    }));
+    try { await Linking.openURL(`whatsapp://send?text=${msg}`); } catch { await Linking.openURL(`https://wa.me/?text=${msg}`); }
+  };
+
   const confirmDelete = () => {
     const owner = note.owner_id === me;
     Alert.alert(owner ? t('deleteNoteQ') : t('leaveQ'), owner ? t('deleteNoteBody') : undefined, [
@@ -95,18 +106,20 @@ export function NoteScreen({ route, navigation }: { route: any; navigation: any 
   const today = new Date(); const tomorrow = new Date(Date.now() + 86400000);
 
   const renderTask = (task: Task) => (
-    <TaskRow key={task.id} task={task} showCreator={shared} editing={editingId === task.id}
+    <TaskRow key={task.id} task={task} showCreator={shared} creatorColor={task.created_by ? colors[task.created_by] : undefined} editing={editingId === task.id}
       onToggle={() => { animate(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); store.updateTask(noteId, task.id, { done: !task.done }); }}
       onStartEdit={() => { setEditingId(task.id); }}
       onCommitEdit={(v) => commitEdit(task, v)} onDelete={() => del(task)} onMenu={() => setTaskMenu(task)} />
   );
 
   return (
+    <ThemeContext.Provider value={th}>
+    {realTheme.dark && <StatusBar style="dark" />}
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ paddingTop: insets.top, paddingHorizontal: space.sm, flexDirection: 'row', alignItems: 'center' }}>
-        <IconButton name="chevron-back" label={t('back')} onPress={() => navigation.goBack()} />
+        <IconButton name={rtl ? 'chevron-forward' : 'chevron-back'} label={t('back')} onPress={() => navigation.goBack()} />
         <View style={{ flex: 1, alignItems: 'center' }}>
-          {shared && <AvatarStack people={members.map((m) => ({ id: m.user_id, name: m.display_name }))} ring={bg} size={28} max={4} />}
+          {shared && <AvatarStack people={members.map((m) => ({ id: m.user_id, name: m.display_name, color: colors[m.user_id] }))} ring={bg} size={28} max={4} />}
         </View>
         <IconButton name="person-add-outline" label={t('share')} onPress={() => setShareOpen(true)} />
         <IconButton name="ellipsis-horizontal" label="Menu" onPress={() => setMenuOpen(true)} />
@@ -141,15 +154,13 @@ export function NoteScreen({ route, navigation }: { route: any; navigation: any 
         </View>
       </View>
 
+      {/* sheets/menus keep the real (dark) app theme */}
+      <ThemeContext.Provider value={realTheme}>
       {/* note menu */}
       <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {NOTE_COLORS.map((c) => (
-            <Pressable key={c} accessibilityLabel={c} onPress={() => store.updateNote(noteId, { color: c })}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: th.note[c], borderWidth: note.color === c ? 2 : 0, borderColor: th.text }} />
-          ))}
-        </View>
+        <ColorPicker value={note.color} onPick={(c) => store.updateNote(noteId, { color: c })} />
         <MenuRow icon="copy-outline" label={t('duplicate')} onPress={() => { setMenuOpen(false); const id = store.duplicateNote(noteId); if (id) navigation.replace('Note', { noteId: id }); }} />
+        <MenuRow icon="logo-whatsapp" label={t('shareWhatsapp')} onPress={() => { setMenuOpen(false); void shareWhatsApp(); }} />
         <MenuRow icon="share-outline" label={t('exportText')} onPress={() => { setMenuOpen(false); exportText(); }} />
         <MenuRow icon="trash-outline" danger label={note.owner_id === me ? t('delete') : t('leaveNote')} onPress={() => { setMenuOpen(false); confirmDelete(); }} />
       </Sheet>
@@ -181,6 +192,8 @@ export function NoteScreen({ route, navigation }: { route: any; navigation: any 
       )}
 
       <ShareSheet note={note} me={me} myName={myName} visible={shareOpen} onClose={() => setShareOpen(false)} />
+      </ThemeContext.Provider>
     </KeyboardAvoidingView>
+    </ThemeContext.Provider>
   );
 }

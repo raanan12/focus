@@ -7,7 +7,7 @@ import { useSyncExternalStore } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { Member, Note, Op, Task } from './types';
-import type { NoteColor } from './theme';
+import { DEFAULT_NOTE_COLORS, type NoteColor } from './theme';
 
 export type State = {
   ready: boolean;
@@ -125,7 +125,7 @@ class Store {
     if (!this.userId) return;
     const [notes, mem, tasks] = await Promise.all([
       this.fetchAll<Note>('notes', '*'),
-      this.fetchAll<any>('note_members', 'note_id,user_id,role,position,last_seen_at,profiles(display_name,avatar_url)'),
+      this.fetchAll<any>('note_members', 'note_id,user_id,role,position,last_seen_at,joined_at,profiles(display_name,avatar_url)'),
       this.fetchAll<Task>('tasks', '*', 'position'),
     ]);
     if (!notes || !mem || !tasks) return;           // offline / error → keep cache
@@ -134,7 +134,7 @@ class Store {
     const m: Record<string, Member[]> = {};
     mem.forEach((r) => {
       (m[r.note_id] ??= []).push({
-        note_id: r.note_id, user_id: r.user_id, role: r.role, position: r.position, last_seen_at: r.last_seen_at,
+        note_id: r.note_id, user_id: r.user_id, role: r.role, position: r.position, last_seen_at: r.last_seen_at, joined_at: r.joined_at,
         display_name: r.profiles?.display_name ?? '', avatar_url: r.profiles?.avatar_url ?? null,
       });
     });
@@ -220,7 +220,7 @@ class Store {
   createNote(init: { title?: string; color?: NoteColor } = {}): string {
     const me = this.me();
     const id = uuid();
-    const color = init.color ?? (['yellow', 'pink', 'blue', 'green', 'purple', 'orange'] as NoteColor[])[Math.floor(Math.random() * 6)];
+    const color = init.color ?? DEFAULT_NOTE_COLORS[Math.floor(Math.random() * DEFAULT_NOTE_COLORS.length)];
     const now = new Date().toISOString();
     const note: Note = { id, owner_id: me, title: init.title ?? '', color, created_at: now, updated_at: now, updated_by: me };
     const prof = this.state.members && Object.values(this.state.members).flat().find((m) => m.user_id === me);

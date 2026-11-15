@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, ScrollView, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar, Button, Input, Sheet, Text } from './ui';
-import { radius, space, useTheme } from '../lib/theme';
+import { memberColors, radius, space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import { INVITE_BASE_URL, supabase } from '../lib/supabase';
 import { store, useStore } from '../lib/store';
@@ -20,6 +20,7 @@ export function ShareSheet({ note, me, myName, visible, onClose }: { note: Note;
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const isOwner = note.owner_id === me;
+  const colors = memberColors(members);
 
   const loadInvites = useCallback(async () => {
     const { data } = await supabase.rpc('list_note_invites', { p_note_id: note.id });
@@ -33,7 +34,7 @@ export function ShareSheet({ note, me, myName, visible, onClose }: { note: Note;
     const { data, error } = await supabase.rpc('create_invite', { p_note_id: note.id, p_max_uses: 5, p_email: forEmail ?? null });
     setBusy(false);
     if (error || !data) { Alert.alert(t('error'), error?.message ?? ''); return null; }
-    const url = `${INVITE_BASE_URL}/join/${data}`;
+    const url = INVITE_BASE_URL ? `${INVITE_BASE_URL}/join/${data}` : `focus://join/${data}`;
     if (!forEmail) setLink(url);
     void loadInvites();
     return url;
@@ -46,12 +47,20 @@ export function ShareSheet({ note, me, myName, visible, onClose }: { note: Note;
     const msg = encodeURIComponent(text(u));
     try { await Linking.openURL(`whatsapp://send?text=${msg}`); } catch { await Linking.openURL(`https://wa.me/?text=${msg}`); }
   };
-  const mail = async () => {
-    const addr = email.trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(addr)) return;
-    const u = await makeLink(addr); if (!u) return;
+  const isEmail = (v: string) => /^\S+@\S+\.\S+$/.test(v.trim());
+  const isCode = (v: string) => v.replace(/[^A-Za-z0-9]/g, '').length === 8 && !v.includes('@');
+  const addPartner = async () => {
+    const v = email.trim();
+    setBusy(true);
+    const { data, error } = isEmail(v)
+      ? await supabase.rpc('share_note_by_email', { p_note_id: note.id, p_email: v.toLowerCase() })
+      : await supabase.rpc('share_note_by_code', { p_note_id: note.id, p_code: v });
+    setBusy(false);
+    if (error) { Alert.alert(error.message.includes('user_not_found') ? t('codeNotFound') : t('error'), error.message.includes('user_not_found') ? undefined : error.message); return; }
     setEmail('');
-    await Linking.openURL(`mailto:${encodeURIComponent(addr)}?subject=${encodeURIComponent(t('inviteSubject'))}&body=${encodeURIComponent(text(u))}`);
+    void loadInvites();
+    if (data === 'added') void store.refresh();
+    Alert.alert(data === 'added' ? t('shareAdded') : t('sharePending'));
   };
   const revoke = async (id: string) => { await supabase.rpc('revoke_invite', { p_invite_id: id }); void loadInvites(); };
 
@@ -63,16 +72,17 @@ export function ShareSheet({ note, me, myName, visible, onClose }: { note: Note;
           <Button style={{ flex: 1 }} variant="secondary" icon="logo-whatsapp" title={t('whatsapp')} onPress={whatsapp} />
         </View>
         <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-          <Input value={email} onChangeText={setEmail} placeholder={t('email')} keyboardType="email-address" autoCapitalize="none"
+          <Input value={email} onChangeText={setEmail} placeholder={t('emailOrCode')} autoCapitalize="none" autoCorrect={false}
             style={{ flex: 1, backgroundColor: th.surface, borderRadius: radius.pill, paddingHorizontal: space.lg, minHeight: 48 }} />
-          <Button style={{ minHeight: 48, paddingHorizontal: space.lg }} icon="mail-outline" title={t('emailInvite')} onPress={mail} disabled={!/^\S+@\S+\.\S+$/.test(email.trim())} />
+          <Button style={{ minHeight: 48, paddingHorizontal: space.lg }} icon="person-add-outline" title={t('emailInvite')} onPress={addPartner} loading={busy} disabled={!(isEmail(email) || isCode(email))} />
         </View>
+        <Text variant="caption" dim="tertiary">{t('emailShareHint')}</Text>
         <Text variant="caption" dim="tertiary">{t('inviteValid')}</Text>
 
         <Text strong style={{ marginTop: space.sm }}>{t('partners')}</Text>
         {members.map((m) => (
           <View key={m.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48 }}>
-            <Avatar id={m.user_id} name={m.display_name || '?'} size={36} />
+            <Avatar id={m.user_id} name={m.display_name || '?'} color={colors[m.user_id]} size={36} />
             <View style={{ flex: 1 }}>
               <Text>{m.user_id === me ? t('you') : m.display_name || '—'}</Text>
               {m.role === 'owner' && <Text variant="caption" dim="tertiary">{t('owner')}</Text>}

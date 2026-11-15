@@ -17,7 +17,8 @@ export function Text({ variant = 'body', strong, dim, style, ...p }:
     <RNText
       {...p}
       style={[{ color, fontSize: font[variant], fontWeight: strong || variant === 'hero' || variant === 'title' ? '700' : '400',
-        textAlign: rtl ? 'right' : 'left', writingDirection: rtl ? 'rtl' : 'ltr',
+        // 'auto' = start of the writing direction. An explicit 'right' gets mirrored by RN inside an RTL root view.
+        textAlign: 'auto', writingDirection: rtl ? 'rtl' : 'ltr',
         lineHeight: Math.round(font[variant] * 1.35) }, style]}
     />
   );
@@ -69,10 +70,10 @@ export function IconButton({ name, onPress, label, color, size = 24 }:
   );
 }
 
-export function Avatar({ id, name, size = 28, ring }: { id: string; name: string; size?: number; ring?: string }) {
+export function Avatar({ id, name, size = 28, ring, color }: { id: string; name: string; size?: number; ring?: string; color?: string }) {
   const initial = (name.trim()[0] ?? '?').toUpperCase();
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: avatarColor(id),
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color ?? avatarColor(id),
       alignItems: 'center', justifyContent: 'center', borderWidth: ring ? 2 : 0, borderColor: ring }}>
       <RNText style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.42 }}>{initial}</RNText>
     </View>
@@ -80,12 +81,12 @@ export function Avatar({ id, name, size = 28, ring }: { id: string; name: string
 }
 
 export function AvatarStack({ people, size = 24, ring, max = 3 }:
-  { people: { id: string; name: string }[]; size?: number; ring: string; max?: number }) {
+  { people: { id: string; name: string; color?: string }[]; size?: number; ring: string; max?: number }) {
   const shown = people.slice(0, max); const extra = people.length - shown.length;
   return (
     <View style={{ flexDirection: 'row' }}>
       {shown.map((p, i) => (
-        <View key={p.id} style={{ marginStart: i === 0 ? 0 : -size * 0.35 }}><Avatar id={p.id} name={p.name} size={size} ring={ring} /></View>
+        <View key={p.id} style={{ marginStart: i === 0 ? 0 : -size * 0.35 }}><Avatar id={p.id} name={p.name} color={p.color} size={size} ring={ring} /></View>
       ))}
       {extra > 0 && (
         <View style={{ marginStart: -size * 0.35, width: size, height: size, borderRadius: size / 2, backgroundColor: ring,

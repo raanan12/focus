@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, View, useWindowDimensions } from 'react-native';
+import { Image, FlatList, Pressable, RefreshControl, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,7 +7,8 @@ import * as Haptics from 'expo-haptics';
 import { Alert } from 'react-native';
 import { NoteCard } from '../components/NoteCard';
 import { Input, MenuRow, Sheet, Text, IconButton } from '../components/ui';
-import { NOTE_COLORS, radius, space, useTheme } from '../lib/theme';
+import { radius, space, useTheme } from '../lib/theme';
+import { ColorPicker } from '../components/ColorPicker';
 import { useI18n } from '../lib/i18n';
 import { store, useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
@@ -76,7 +77,7 @@ export function HomeScreen({ navigation }: { navigation: any }) {
   return (
     <View style={{ flex: 1, backgroundColor: th.bg }}>
       <View style={{ paddingTop: insets.top + space.sm, paddingHorizontal: pad, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text variant="hero">{t('appName')}</Text>
+        <Image source={require('../../assets/logo-mark.png')} accessibilityLabel={t('appName')} style={{ width: 40, height: 40 }} resizeMode="contain" />
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {(s.pending > 0 || !s.online) && (
             <View accessibilityLabel={t('offline')} style={{ paddingHorizontal: space.sm }}>
@@ -128,12 +129,7 @@ export function HomeScreen({ navigation }: { navigation: any }) {
       <Sheet visible={!!menuNote} onClose={() => setMenuNote(null)} title={menuNote?.title || t('untitled')}>
         {menuNote && (
           <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              {NOTE_COLORS.map((c) => (
-                <Pressable key={c} accessibilityLabel={c} onPress={() => { store.updateNote(menuNote.id, { color: c }); setMenuNote(null); }}
-                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: th.note[c], borderWidth: menuNote.color === c ? 2 : 0, borderColor: th.text }} />
-              ))}
-            </View>
+            <ColorPicker value={menuNote.color} onPick={(c) => { store.updateNote(menuNote.id, { color: c }); setMenuNote(null); }} />
             <MenuRow icon="person-add-outline" label={t('share')} onPress={() => { const id = menuNote.id; setMenuNote(null); navigation.navigate('Note', { noteId: id, openShare: true }); }} />
             <MenuRow icon="arrow-up-circle-outline" label={t('moveFirst')} onPress={() => { store.moveNoteToFront(menuNote.id); setMenuNote(null); }} />
             <MenuRow icon="trash-outline" danger label={menuNote.owner_id === me ? t('delete') : t('leaveNote')} onPress={() => { const n = menuNote; setMenuNote(null); confirmDelete(n); }} />

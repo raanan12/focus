@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "9QFNHKGLX8.com.focus.notes"
+        ],
+        "components": [
+          {
+            "/": "/join/*"
+          }
+        ]
+      }
+    ]
+  }
+}

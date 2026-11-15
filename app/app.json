@@ -1,24 +1,24 @@
 {
   "expo": {
-    "name": "Duo",
-    "slug": "duo-notes",
-    "scheme": "duo",
+    "name": "Focus",
+    "slug": "focus-notes",
+    "scheme": "focus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.duo.notes",
+      "bundleIdentifier": "com.focus.notes",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.duo.notes",
+      "package": "com.focus.notes",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
+        "backgroundColor": "#E6ECF2",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -32,7 +32,22 @@
       "expo-localization",
       "expo-apple-authentication",
       "expo-notifications",
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#EDF3F7"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "34667436-9518-4f8f-beb6-3efc6a439272"
+      }
+    },
+    "owner": "raanan"
   }
 }

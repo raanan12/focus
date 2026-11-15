@@ -1,67 +1,79 @@
-// Stripe-hosted Checkout inside an in-app WebView. Card data is typed on Stripe's page only.
+// Apple In-App Purchase paywall (RevenueCat). Apple handles billing, tax, refunds and cancellation.
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { ActivityIndicator, Alert, Linking, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { PurchasesPackage } from 'react-native-purchases';
 import { Button, IconButton, Text } from '../components/ui';
 import { space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
+import { getSubscriptionPackage, purchase, purchasesAvailable, restore } from '../lib/purchases';
 
-type Checkout = { url: string; success_url: string; cancel_url: string };
+const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+
+/** The webhook usually lands within a few seconds; wait for it so the UI unlocks without a restart. */
+async function waitForAccess(): Promise<boolean> {
+  for (let i = 0; i < 10; i++) {
+    const { data } = await supabase.rpc('my_access');
+    if (data?.status === 'active' || data?.status === 'trialing') return true;
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return false;
+}
 
 export function PaywallScreen({ navigation }: { navigation: any }) {
   const th = useTheme(); const { t } = useI18n(); const insets = useSafeAreaInsets();
-  const [co, setCo] = useState<Checkout | null>(null);
-  const [starting, setStarting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [pkg, setPkg] = useState<PurchasesPackage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
 
-  const start = async () => {
-    setStarting(true);
-    const { data, error } = await supabase.functions.invoke('create-checkout');
-    setStarting(false);
-    if (error || !data?.url) { Alert.alert(t('error'), t('retry')); return; }
-    setCo(data as Checkout);
+  useEffect(() => {
+    let alive = true;
+    getSubscriptionPackage().then((p) => alive && setPkg(p)).catch(() => {}).finally(() => alive && setLoading(false));
+    return () => { alive = false; };
+  }, []);
+
+  const finish = async () => {
+    const ok = await waitForAccess();
+    if (!ok) Alert.alert(t('purchasePending'));
+    navigation.goBack();
   };
 
-  useEffect(() => () => {}, []);
+  const buy = async () => {
+    if (!pkg) return;
+    setBusy('buy');
+    try { if (await purchase(pkg)) await finish(); }
+    catch (e: any) { Alert.alert(t('error'), e?.message ?? t('retry')); }
+    finally { setBusy(null); }
+  };
 
-  if (!co) {
-    return (
-      <View style={{ flex: 1, backgroundColor: th.bg, padding: space.xl, paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.xl, justifyContent: 'space-between' }}>
-        <View style={{ alignItems: 'flex-end' }}><IconButton name="close" label={t('cancel')} onPress={() => navigation.goBack()} /></View>
-        <View style={{ gap: space.md }}>
-          <Text style={{ fontSize: 56, lineHeight: 72 }}>✨</Text>
-          <Text variant="hero">{t('paywallTitle')}</Text>
-          <Text dim="secondary">{t('paywallBody')}</Text>
-          <Text strong style={{ marginTop: space.lg }}>{t('priceLine')}</Text>
-          <Text variant="caption" dim="tertiary">{t('securePayment')}</Text>
-        </View>
-        <Button title={t('subscribe')} loading={starting} onPress={start} />
-      </View>
-    );
-  }
+  const doRestore = async () => {
+    setBusy('restore');
+    try { await restore(); await finish(); }
+    catch (e: any) { Alert.alert(t('error'), e?.message ?? t('retry')); }
+    finally { setBusy(null); }
+  };
+
+  const price = pkg?.product.priceString;
 
   return (
-    <View style={{ flex: 1, backgroundColor: th.bg, paddingTop: insets.top }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm }}>
-        <IconButton name="close" label={t('cancel')} onPress={() => navigation.goBack()} />
-        <Text variant="caption" dim="tertiary">🔒 Stripe</Text>
-        <View style={{ width: 44 }} />
+    <View style={{ flex: 1, backgroundColor: th.bg, padding: space.xl, paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.xl, justifyContent: 'space-between' }}>
+      <View style={{ alignItems: 'flex-end' }}><IconButton name="close" label={t('cancel')} onPress={() => navigation.goBack()} /></View>
+      <View style={{ gap: space.md }}>
+        <Text style={{ fontSize: 56, lineHeight: 72 }}>✨</Text>
+        <Text variant="hero">{t('paywallTitle')}</Text>
+        <Text dim="secondary">{t('paywallBody')}</Text>
+        <Text strong style={{ marginTop: space.lg }}>{price ? t('priceLine', { price }) : loading ? '…' : t('storeUnavailable')}</Text>
+        <Text variant="caption" dim="tertiary">{t('securePayment')}</Text>
+        {!purchasesAvailable && <Text variant="caption" dim="tertiary">{t('storeOnlyInBuild')}</Text>}
       </View>
-      <WebView
-        source={{ uri: co.url }}
-        originWhitelist={['https://*']}
-        javaScriptEnabled domStorageEnabled setSupportMultipleWindows={false} mixedContentMode="never"
-        onLoadStart={() => setLoading(true)} onLoadEnd={() => setLoading(false)}
-        onShouldStartLoadWithRequest={(req) => {
-          if (req.url.startsWith(co.success_url)) { navigation.goBack(); return false; }   // webhook updates our DB; Settings/Home re-read access on focus
-          if (req.url.startsWith(co.cancel_url)) { navigation.goBack(); return false; }
-          return req.url.startsWith('https://') || req.url === 'about:blank';             // never load http/intent/custom schemes
-        }}
-        style={{ flex: 1, backgroundColor: th.bg }}
-      />
-      {loading && <View pointerEvents="none" style={{ position: 'absolute', top: '50%', alignSelf: 'center' }}><ActivityIndicator /></View>}
+      <View style={{ gap: space.md }}>
+        {loading ? <ActivityIndicator /> : (
+          <Button title={price ? t('subscribeFor', { price }) : t('subscribe')} loading={busy === 'buy'} disabled={!pkg || busy !== null} onPress={buy} />
+        )}
+        <Button title={t('restorePurchases')} variant="ghost" loading={busy === 'restore'} disabled={!purchasesAvailable || busy !== null} onPress={doRestore} />
+        <Text variant="caption" dim="tertiary" style={{ textAlign: 'center' }} onPress={() => Linking.openURL(TERMS_URL)}>{t('termsOfUse')}</Text>
+      </View>
     </View>
   );
 }

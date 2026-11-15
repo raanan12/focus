@@ -6,8 +6,8 @@ import { avatarColor, radius, space, useTheme } from '../lib/theme';
 import { localeFor, useI18n } from '../lib/i18n';
 import type { Task } from '../lib/types';
 
-export function TaskRow({ task, showCreator, editing, onToggle, onStartEdit, onCommitEdit, onDelete, onMenu }: {
-  task: Task; showCreator: boolean; editing: boolean;
+export function TaskRow({ task, showCreator, creatorColor, editing, onToggle, onStartEdit, onCommitEdit, onDelete, onMenu }: {
+  task: Task; showCreator: boolean; creatorColor?: string; editing: boolean;
   onToggle: () => void; onStartEdit: () => void; onCommitEdit: (text: string) => void; onDelete: () => void; onMenu: () => void;
 }) {
   const th = useTheme(); const { t, lang, rtl } = useI18n();
@@ -36,11 +36,7 @@ export function TaskRow({ task, showCreator, editing, onToggle, onStartEdit, onC
   return (
     <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: x }] }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 52, paddingVertical: space.xs }}>
-        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: task.done }} onPress={onToggle} hitSlop={10}
-          style={{ width: 28, height: 28, borderRadius: 9, borderWidth: 2, borderColor: task.done ? th.text : th.textTertiary,
-            backgroundColor: task.done ? th.text : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-          {task.done && <Ionicons name="checkmark" size={18} color={th.bg} />}
-        </Pressable>
+        {/* text first, checkbox last: the root direction puts the text at the start edge (left in EN, right in HE) and the checkbox at the opposite edge */}
         <View style={{ flex: 1 }}>
           {editing ? (
             <Input autoFocus value={val} onChangeText={setVal} multiline blurOnSubmit returnKeyType="done" maxLength={1000}
@@ -55,8 +51,13 @@ export function TaskRow({ task, showCreator, editing, onToggle, onStartEdit, onC
           )}
         </View>
         {showCreator && task.created_by && (
-          <View accessibilityLabel={t('assigned', { name: '' })} style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: avatarColor(task.created_by) }} />
+          <View accessibilityLabel={t('assigned', { name: '' })} style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: creatorColor ?? avatarColor(task.created_by) }} />
         )}
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: task.done }} onPress={onToggle} hitSlop={10}
+          style={{ width: 28, height: 28, borderRadius: 9, borderWidth: 2, borderColor: task.done ? th.primary : th.textTertiary,
+            backgroundColor: task.done ? th.primary : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+          {task.done && <Ionicons name="checkmark" size={18} color={th.onPrimary} />}
+        </Pressable>
       </View>
     </Animated.View>
   );

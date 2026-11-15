@@ -1,5 +1,5 @@
 -- =====================================================================
--- Duo — Supabase schema (tables, RLS, triggers, RPC functions)
+-- Focus — Supabase schema (tables, RLS, triggers, RPC functions)
 -- Run the WHOLE file once in: Supabase Dashboard → SQL Editor → New query.
 -- Safe to re-run on an empty project; it is NOT an upgrade script.
 -- =====================================================================
@@ -32,7 +32,8 @@ create table public.notes (
   owner_id   uuid not null references public.profiles(id) on delete cascade,
   title      text not null default '' check (char_length(title) <= 200),
   color      text not null default 'yellow'
-             check (color in ('yellow','pink','blue','green','purple','orange')),
+             check (color in ('yellow','lemon','amber','orange','peach','red','rose','pink','magenta','purple','violet','indigo',
+                        'blue','sky','cyan','teal','mint','green','lime','olive','sand','brown','gray','slate')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles(id) on delete set null
@@ -81,7 +82,8 @@ create table public.invites (
 );
 create index invites_note_idx on public.invites(note_id);
 
--- Written ONLY by the Stripe webhook (service role). Clients can read their own row.
+-- Written ONLY by the revenuecat-webhook Edge Function (service role). Clients can read their own row.
+-- (stripe_* columns are legacy and unused.)
 create table public.subscriptions (
   user_id              uuid primary key references public.profiles(id) on delete cascade,
   stripe_customer_id   text unique,
@@ -592,3 +594,137 @@ alter publication supabase_realtime add table public.notes, public.tasks, public
 --   insert into public.admin_users (user_id)
 --   select id from auth.users where email = 'YOUR_EMAIL@example.com';
 -- ---------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------
+-- Share by e-mail (see patches/001_share_by_email.sql)
+-- ---------------------------------------------------------------------
+-- Share a note by e-mail address.
+--  * address belongs to an existing user  -> they become a member immediately
+--  * address not registered yet           -> a pending invite is stored; it is claimed
+--                                            automatically on their first (verified) sign-in
+-- Safe to run more than once.
+
+create or replace function public.share_note_by_email(p_note_id uuid, p_email text)
+returns text language plpgsql security definer set search_path = '' as $$
+declare
+  v_email  text := lower(trim(p_email));
+  v_target uuid;
+begin
+  if (select auth.uid()) is null or not public.is_note_member(p_note_id) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if v_email is null or v_email !~ '^\S+@\S+\.\S+$' or char_length(v_email) > 254 then
+    raise exception 'invalid email' using errcode = 'P0001';
+  end if;
+
+  select u.id into v_target from auth.users u where lower(u.email) = v_email limit 1;
+
+  if v_target is not null then
+    insert into public.note_members (note_id, user_id, role)
+    values (p_note_id, v_target, 'member')
+    on conflict do nothing;
+    return 'added';
+  end if;
+
+  -- not registered yet: keep one pending invite per (note, email)
+  if not exists (select 1 from public.invites
+                  where note_id = p_note_id and invited_email = v_email
+                    and not revoked and expires_at > now() and uses < max_uses) then
+    if (select count(*) from public.invites
+         where note_id = p_note_id and not revoked and expires_at > now() and uses < max_uses) >= 20 then
+      raise exception 'too many active invites' using errcode = 'P0001';
+    end if;
+    insert into public.invites (note_id, token_hash, created_by, invited_email, max_uses, expires_at)
+    values (
+      p_note_id,
+      encode(extensions.digest(extensions.gen_random_bytes(24), 'sha256'), 'hex'),  -- token is never revealed
+      (select auth.uid()), v_email, 1, now() + interval '30 days'
+    );
+  end if;
+  return 'pending';
+end;
+$$;
+
+-- Called by the app right after sign-in. Uses the e-mail from the caller's own (verified) JWT.
+create or replace function public.claim_email_invites()
+returns int language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid   uuid := (select auth.uid());
+  v_email text := lower(coalesce((select auth.jwt()) ->> 'email', ''));
+  i record;
+  v_n int := 0;
+begin
+  if v_uid is null or v_email = '' then return 0; end if;
+  for i in
+    select id, note_id from public.invites
+     where invited_email = v_email and not revoked and expires_at > now() and uses < max_uses
+     for update
+  loop
+    insert into public.note_members (note_id, user_id, role)
+    values (i.note_id, v_uid, 'member')
+    on conflict do nothing;
+    update public.invites set uses = uses + 1 where id = i.id;
+    v_n := v_n + 1;
+  end loop;
+  return v_n;
+end;
+$$;
+
+revoke execute on function public.share_note_by_email(uuid, text) from public, anon;
+revoke execute on function public.claim_email_invites()           from public, anon;
+grant  execute on function public.share_note_by_email(uuid, text) to authenticated;
+grant  execute on function public.claim_email_invites()           to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Personal share code (see patches/003_share_code.sql)
+-- ---------------------------------------------------------------------
+-- Personal share code per user, so notes can be shared without knowing an e-mail address
+-- (Sign in with Apple "Hide My Email" gives the app a private-relay address nobody knows).
+-- Safe to run more than once.
+
+-- 8 chars from a 32-symbol alphabet without look-alikes (no I, O, 0, 1). 256 % 32 = 0 → no modulo bias.
+create or replace function public.gen_share_code()
+returns text language plpgsql volatile set search_path = '' as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v text; i int;
+begin
+  loop
+    v := '';
+    for i in 1..8 loop
+      v := v || substr(alphabet, 1 + (get_byte(extensions.gen_random_bytes(1), 0) % 32), 1);
+    end loop;
+    exit when not exists (select 1 from public.profiles where share_code = v);
+  end loop;
+  return v;
+end;
+$$;
+
+alter table public.profiles add column if not exists share_code text unique;
+update public.profiles set share_code = public.gen_share_code() where share_code is null;
+alter table public.profiles alter column share_code set default public.gen_share_code();
+alter table public.profiles alter column share_code set not null;
+
+create or replace function public.share_note_by_code(p_note_id uuid, p_code text)
+returns text language plpgsql security definer set search_path = '' as $$
+declare
+  v_code   text := upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g'));
+  v_target uuid;
+begin
+  if (select auth.uid()) is null or not public.is_note_member(p_note_id) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if char_length(v_code) <> 8 then raise exception 'user_not_found' using errcode = 'P0001'; end if;
+
+  select id into v_target from public.profiles where share_code = v_code;
+  if v_target is null then raise exception 'user_not_found' using errcode = 'P0001'; end if;
+
+  insert into public.note_members (note_id, user_id, role)
+  values (p_note_id, v_target, 'member')
+  on conflict do nothing;
+  return 'added';
+end;
+$$;
+
+revoke execute on function public.share_note_by_code(uuid, text) from public, anon;
+grant  execute on function public.share_note_by_code(uuid, text) to authenticated;

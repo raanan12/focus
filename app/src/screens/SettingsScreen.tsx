@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, Switch, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, IconButton, Input, Sheet, Text } from '../components/ui';
@@ -10,6 +11,8 @@ import { useAuth } from '../lib/auth';
 import { useAccess } from '../lib/access';
 import { store } from '../lib/store';
 import { supabase } from '../lib/supabase';
+import { manageSubscriptions } from '../lib/purchases';
+import * as Clipboard from 'expo-clipboard';
 import { askNotificationPermission } from '../lib/reminders';
 
 function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { v: T; label: string }[]; onChange: (v: T) => void }) {
@@ -31,11 +34,20 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 );
 
 export function SettingsScreen({ navigation }: { navigation: any }) {
-  const th = useTheme(); const { t, lang, setLang } = useI18n(); const insets = useSafeAreaInsets();
+  const th = useTheme(); const { t, lang, setLang, rtl } = useI18n(); const insets = useSafeAreaInsets();
   const { themePref, setThemePref, reminders, setReminders } = usePrefs();
   const { session, signOut } = useAuth();
   const { access, refresh } = useAccess();
   const [delOpen, setDelOpen] = useState(false); const [confirmText, setConfirmText] = useState(''); const [busy, setBusy] = useState(false);
+
+  const [shareCode, setShareCode] = useState<string | null>(null); const [codeCopied, setCodeCopied] = useState(false);
+  useEffect(() => {
+    if (!session) return;
+    supabase.from('profiles').select('share_code').eq('id', session.user.id).maybeSingle()
+      .then(({ data }) => setShareCode((data as { share_code?: string } | null)?.share_code ?? null));
+  }, [session?.user.id]);
+  const prettyCode = shareCode ? `${shareCode.slice(0, 4)}-${shareCode.slice(4)}` : '…';
+  const copyCode = async () => { if (!shareCode) return; await Clipboard.setStringAsync(prettyCode); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 2200); };
 
   useFocusEffect(React.useCallback(() => { void refresh(); }, [refresh]));
 
@@ -46,19 +58,6 @@ export function SettingsScreen({ navigation }: { navigation: any }) {
     : access.has_access ? t('planTrial', { days: Math.max(0, Math.ceil((Date.parse(access.trial_ends_at!) - Date.now()) / 86400000)) })
     : t('planNone');
 
-  const cancelSub = () => Alert.alert(t('cancelSubQ'), t('cancelSubBody'), [
-    { text: t('cancel'), style: 'cancel' },
-    { text: t('cancelSub'), style: 'destructive', onPress: async () => {
-      const { error } = await supabase.functions.invoke('cancel-subscription');
-      if (error) Alert.alert(t('error')); await refresh();
-    } },
-  ]);
-
-  const exportAll = () => {
-    const s = store.state;
-    const data = Object.values(s.notes).map((n) => ({ title: n.title, color: n.color, tasks: (s.tasks[n.id] ?? []).map((x) => ({ text: x.text, done: x.done, due_date: x.due_date })) }));
-    void Share.share({ message: JSON.stringify(data, null, 2) });
-  };
 
   const deleteAccount = async () => {
     setBusy(true);
@@ -76,11 +75,20 @@ export function SettingsScreen({ navigation }: { navigation: any }) {
   return (
     <View style={{ flex: 1, backgroundColor: th.bg }}>
       <View style={{ paddingTop: insets.top, paddingHorizontal: space.sm, flexDirection: 'row', alignItems: 'center' }}>
-        <IconButton name="chevron-back" label={t('back')} onPress={() => navigation.goBack()} />
+        <IconButton name={rtl ? 'chevron-forward' : 'chevron-back'} label={t('back')} onPress={() => navigation.goBack()} />
         <Text variant="title">{t('settings')}</Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: space.xl, gap: space.xxl, paddingBottom: insets.bottom + space.huge }}>
         <Text dim="secondary">{session?.user.email}</Text>
+
+        <Section title={t('myShareCode')}>
+          <Pressable onPress={copyCode} accessibilityRole="button" accessibilityLabel={t('myShareCode')}
+            style={{ backgroundColor: th.surface, borderRadius: radius.md, padding: space.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', direction: 'ltr' }}>
+            <Text style={{ fontSize: 26, lineHeight: 34, fontWeight: '800', letterSpacing: 3 }}>{prettyCode}</Text>
+            {codeCopied ? <Text variant="caption" dim="secondary">{t('codeCopied')}</Text> : <Ionicons name="copy-outline" size={22} color={th.textSecondary} />}
+          </Pressable>
+          <Text variant="caption" dim="tertiary">{t('shareCodeHint')}</Text>
+        </Section>
 
         <Section title={t('language')}>
           <Segmented<Lang> value={lang} onChange={setLang} options={[{ v: 'he', label: 'עברית' }, { v: 'en', label: 'English' }, { v: 'ar', label: 'العربية' }]} />
@@ -97,11 +105,10 @@ export function SettingsScreen({ navigation }: { navigation: any }) {
         <Section title={t('subscription')}>
           <Text>{planLine}</Text>
           {subscribed
-            ? !(access?.cancel_at_period_end) && <Button variant="secondary" title={t('cancelSub')} onPress={cancelSub} />
+            ? <Button variant="secondary" title={t('cancelSub')} onPress={() => { void manageSubscriptions().catch(() => Linking.openURL('https://apps.apple.com/account/subscriptions')); }} />
             : <Button title={t('subscribe')} onPress={() => navigation.navigate('Paywall')} />}
         </Section>
         <Section title=" ">
-          <Button variant="secondary" icon="download-outline" title={t('exportData')} onPress={exportAll} />
           <Button variant="secondary" icon="log-out-outline" title={t('signOut')} onPress={() => signOut()} />
           <Button variant="ghost" title={t('deleteAccount')} onPress={() => { setConfirmText(''); setDelOpen(true); }} style={{ }} />
         </Section>

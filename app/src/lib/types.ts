@@ -6,7 +6,7 @@ export type Note = {
 };
 export type Member = {
   note_id: string; user_id: string; role: 'owner' | 'member';
-  position: number; last_seen_at: string;
+  position: number; last_seen_at: string; joined_at?: string;
   display_name: string; avatar_url: string | null;
 };
 export type Task = {

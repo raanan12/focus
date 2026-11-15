@@ -5,6 +5,9 @@ import { radius, space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 
+// Email-code login needs custom SMTP + a template containing {{ .Token }} in Supabase. Enable once that's set up.
+const EMAIL_LOGIN_ENABLED = false;
+
 export function AuthButtons() {
   const th = useTheme(); const { t } = useI18n(); const auth = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
@@ -34,12 +37,16 @@ export function AuthButtons() {
     <View style={{ gap: space.md }}>
       <Button title={t('signInGoogle')} icon="logo-google" loading={busy === 'google'} onPress={() => run('google', auth.signInGoogle)} />
       {auth.appleAvailable && <Button title={t('signInApple')} icon="logo-apple" variant="secondary" loading={busy === 'apple'} onPress={() => run('apple', auth.signInApple)} />}
-      <Text variant="caption" dim="tertiary" style={{ textAlign: 'center' }}>{t('or')}</Text>
-      <Input value={email} onChangeText={setEmail} placeholder={t('email')} keyboardType="email-address" autoCapitalize="none"
-        autoComplete="email" textContentType="emailAddress"
-        style={{ backgroundColor: th.surface, borderRadius: radius.md, padding: space.lg }} />
-      <Button title={t('sendCode')} variant="secondary" loading={busy === 'otp'} disabled={!/^\S+@\S+\.\S+$/.test(email.trim())}
-        onPress={() => run('otp', async () => { await auth.sendCode(email); setSentTo(email.trim().toLowerCase()); })} />
+      {EMAIL_LOGIN_ENABLED && (
+        <>
+          <Text variant="caption" dim="tertiary" style={{ textAlign: 'center' }}>{t('or')}</Text>
+          <Input value={email} onChangeText={setEmail} placeholder={t('email')} keyboardType="email-address" autoCapitalize="none"
+            autoComplete="email" textContentType="emailAddress"
+            style={{ backgroundColor: th.surface, borderRadius: radius.md, padding: space.lg }} />
+          <Button title={t('sendCode')} variant="secondary" loading={busy === 'otp'} disabled={!/^\S+@\S+\.\S+$/.test(email.trim())}
+            onPress={() => run('otp', async () => { await auth.sendCode(email); setSentTo(email.trim().toLowerCase()); })} />
+        </>
+      )}
     </View>
   );
 }

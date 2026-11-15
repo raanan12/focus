@@ -1,18 +1,20 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { Text, AvatarStack } from './ui';
-import { radius, space, useTheme } from '../lib/theme';
+import { ThemeContext, memberColors, noteTheme, radius, space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import type { Member, Note, Task } from '../lib/types';
 
 export function NoteCard({ note, tasks, members, unread, onPress, onLongPress, width }:
   { note: Note; tasks: Task[]; members: Member[]; unread: boolean; onPress: () => void; onLongPress: () => void; width: number }) {
-  const th = useTheme(); const { t } = useI18n();
+  const real = useTheme(); const th = React.useMemo(() => noteTheme(real), [real]); const { t } = useI18n();
   const open = tasks.filter((x) => !x.done);
   const done = tasks.length - open.length;
   const bg = th.note[note.color];
   const shared = members.length > 1;
+  const colors = memberColors(members);
   return (
+    <ThemeContext.Provider value={th}>
     <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={350} accessibilityRole="button"
       accessibilityLabel={note.title || t('untitled')}
       style={({ pressed }) => ({ width, minHeight: 168, backgroundColor: bg, borderRadius: radius.lg, padding: space.lg,
@@ -31,8 +33,9 @@ export function NoteCard({ note, tasks, members, unread, onPress, onLongPress, w
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text variant="caption" dim="tertiary">{tasks.length ? t('progress', { done, total: tasks.length }) : ' '}</Text>
-        {shared && <AvatarStack people={members.map((m) => ({ id: m.user_id, name: m.display_name }))} ring={bg} />}
+        {shared && <AvatarStack people={members.map((m) => ({ id: m.user_id, name: m.display_name, color: colors[m.user_id] }))} ring={bg} />}
       </View>
     </Pressable>
+    </ThemeContext.Provider>
   );
 }

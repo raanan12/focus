@@ -1,16 +1,16 @@
-# Duo — פתקים ומשימות משותפים
+# Focus — פתקים ומשימות משותפים
 
 ```
 app/        אפליקציית Expo (React Native) ל-iOS ול-Android
 admin/      לוח ניהול (Next.js) — רץ על Vercel, אין אליו גישה מהאפליקציה. כולל גם את דף /join/<token> לקישורי הזמנה
-supabase/   schema.sql (טבלאות + RLS + פונקציות) ו-Edge Functions (תשלום Stripe)
+supabase/   schema.sql (טבלאות + RLS + פונקציות) ו-Edge Functions (webhook של RevenueCat, מחיקת חשבון)
 ```
 
 ## אבטחה — מה כבר בפנים
 - RLS מופעל וכפוי על כל הטבלאות; הרשאות עמודות מינימליות (למשל אי אפשר לשנות `owner_id`).
-- אין שום מפתח סודי באפליקציה או ב-Vercel. רק ה-anon key הציבורי. `service_role` ו-Stripe קיימים רק ב-Edge Functions.
-- פרטי כרטיס אשראי נכנסים רק בדף של Stripe (Checkout) בתוך WebView — לא עוברים בשרתים שלך.
-- Webhook של Stripe מאומת בחתימת HMAC + חלון זמן; המצב נקרא מחדש מ-Stripe בכל אירוע.
+- אין שום מפתח סודי באפליקציה או ב-Vercel. רק ה-anon key הציבורי. `service_role` ומפתחות RevenueCat הסודיים קיימים רק ב-Edge Functions.
+- התשלום מתבצע דרך Apple In-App Purchase; פרטי תשלום לא עוברים אצלך בכלל.
+- ה-webhook של RevenueCat מאומת בכותרת סודית, והמצב נקרא מחדש מ-RevenueCat בכל אירוע.
 - קישורי הזמנה: טוקן אקראי 192 ביט, נשמר רק ה-hash, תוקף 7 ימים, מוגבל בשימושים, ניתן לביטול.
 - סשן המשתמש נשמר ב-Keychain/Keystore (SecureStore) ולא ב-AsyncStorage.
 - לוח הניהול: התחברות בקוד למייל + TOTP חובה. בדיקת ההרשאה נעשית בתוך Postgres (`is_admin()` דורש `aal2`).
@@ -22,24 +22,25 @@ supabase/   schema.sql (טבלאות + RLS + פונקציות) ו-Edge Functions
 1. צרו פרויקט ב-supabase.com.
 2. SQL Editor → New query → הדביקו את כל `supabase/schema.sql` → Run.
 3. Authentication → Providers: הפעילו **Email** (עם OTP), **Google**, ו-**Apple** (ל-iOS).
-4. Authentication → URL Configuration → Redirect URLs, הוסיפו: `duo://auth-callback`
+4. Authentication → URL Configuration → Redirect URLs, הוסיפו: `focus://auth-callback`
 5. Project Settings → API: העתיקו `Project URL` ו-`anon public key`.
 
-### 2. Stripe ($1 לחודש ל-12 חודשים)
-1. Stripe Dashboard → Products → מוצר "Duo" → מחיר **$1.00, recurring, monthly**. העתיקו את ה-`price_...`.
-2. Developers → Webhooks → Add endpoint:
-   `https://<PROJECT_REF>.supabase.co/functions/v1/stripe-webhook`
-   אירועים: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. העתיקו את ה-`whsec_...`.
-3. פריסת הפונקציות (דורש Supabase CLI: `brew install supabase/tap/supabase`):
+### 2. מנוי (Apple In-App Purchase דרך RevenueCat)
+1. App Store Connect → Business → Agreements, Tax, and Banking: אשרו את Paid Applications Agreement והזינו בנק ומס.
+2. App Store Connect → האפליקציה → Subscriptions: צרו Subscription Group ומוצר חודשי (למשל `focus_monthly`, $1).
+3. RevenueCat (revenuecat.com): צרו פרויקט ואפליקציית iOS (bundle id `com.focus.notes`), חברו את App Store Connect (App-Specific Shared Secret / In-App Purchase Key), ייבאו את המוצר.
+   - Entitlements → צרו entitlement בשם **`pro`** וצרפו אליו את המוצר.
+   - Offerings → ה-offering ה-**current** מכיל package אחד עם המוצר.
+4. RevenueCat → Project settings → API keys: העתיקו את ה-**Public iOS SDK key** (`appl_...`) ל-`app/eas.json` תחת `EXPO_PUBLIC_REVENUECAT_IOS_KEY`.
+5. RevenueCat → Integrations → Webhooks → Add: כתובת `https://<PROJECT_REF>.supabase.co/functions/v1/revenuecat-webhook`, ובשדה Authorization header: `Bearer <סוד-אקראי-ארוך>`.
+6. פריסה:
 ```bash
-supabase login
-supabase link --project-ref <PROJECT_REF>
-supabase secrets set STRIPE_SECRET_KEY=sk_live_... STRIPE_PRICE_ID=price_... STRIPE_WEBHOOK_SECRET=whsec_... CHECKOUT_RETURN_URL=https://<VERCEL_DOMAIN>
-supabase functions deploy create-checkout cancel-subscription delete-account stripe-webhook
+supabase secrets set REVENUECAT_WEBHOOK_AUTH=<אותו סוד אקראי> REVENUECAT_API_KEY=<Secret API key v1 מ-RevenueCat>
+supabase functions deploy revenuecat-webhook delete-account
 ```
 (`SUPABASE_URL` ו-`SUPABASE_SERVICE_ROLE_KEY` מוזרקים אוטומטית לפונקציות.)
 
-המנוי מסתיים אוטומטית אחרי 12 חיובים (ה-webhook קובע `cancel_at`).
+המנוי מתחדש חודשית עד שהמשתמש מבטל בהגדרות ה-Apple ID. רכישות עובדות רק ב-build אמיתי (TestFlight / dev build), לא ב-Expo Go.
 
 ### 3. האפליקציה
 ```bash
@@ -48,7 +49,7 @@ cp .env.example .env     # מלאו URL, anon key ודומיין Vercel
 npm install
 npx expo start           # סריקת QR עם Expo Go (התחברות Apple / בנייה מלאה דורשים dev build)
 ```
-בנייה לחנויות: `npx eas-cli build --platform all`. החליפו את `com.duo.notes` ב-`app/app.json` במזהה שלכם.
+בנייה לחנויות: `npx eas-cli build --platform all`. החליפו את `com.focus.notes` ב-`app/app.json` במזהה שלכם.
 
 ### 4. לוח הניהול (Vercel)
 1. vercel.com → Add New Project → בחרו את הריפו → **Root Directory: `admin`**.

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthButtons } from '../components/AuthButtons';
 import { Button, Text } from '../components/ui';
-import { radius, space, useTheme } from '../lib/theme';
+import { noteTheme, ThemeContext, radius, space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -51,12 +51,14 @@ export function JoinScreen({ route, navigation }: { route: any; navigation: any 
               <Text variant="title">{t('joinTitle', { name: preview.inviter_name || '…' })}</Text>
               <Text dim="secondary">{t('joinBody')}</Text>
             </View>
+            <ThemeContext.Provider value={noteTheme(th)}>
             <View style={{ backgroundColor: bg, borderRadius: radius.lg, padding: space.xl, gap: space.md }}>
               <Text variant="title">{preview.note_title || t('untitled')}</Text>
               {preview.tasks.map((x, i) => (
                 <Text key={i} dim={x.done ? 'tertiary' : 'secondary'} style={x.done ? { textDecorationLine: 'line-through' } : undefined}>• {x.text}</Text>
               ))}
             </View>
+            </ThemeContext.Provider>
             <View style={{ flex: 1 }} />
             {session ? <Button title={t('joinButton')} loading={joining} onPress={join} /> : <AuthButtons />}
           </>

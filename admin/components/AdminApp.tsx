@@ -52,7 +52,7 @@ function Login() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-8">
-      <h1 className="text-3xl font-bold">Duo · ניהול</h1>
+      <h1 className="text-3xl font-bold">פוקוס · ניהול</h1>
       {!sent ? (
         <>
           <input className="rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-900" dir="ltr" type="email" autoComplete="email"

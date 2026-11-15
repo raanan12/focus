@@ -1,9 +1,5 @@
-# Only the Stripe webhook is called without a user JWT (it is authenticated by Stripe's signature instead).
-[functions.create-checkout]
-verify_jwt = true
-[functions.cancel-subscription]
-verify_jwt = true
+# The RevenueCat webhook is called without a user JWT; it is authenticated by a shared secret header instead.
 [functions.delete-account]
 verify_jwt = true
-[functions.stripe-webhook]
+[functions.revenuecat-webhook]
 verify_jwt = false
