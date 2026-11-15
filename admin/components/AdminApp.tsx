@@ -45,7 +45,7 @@ function Login() {
   };
   const google = async () => {
     setBusy(true); setErr('');
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/` } });   // trailing slash: must match the /** entry in Supabase's Redirect URLs
     if (error) { setBusy(false); setErr('לא ניתן להתחבר עם Google'); }
   };
   const verify = async () => {
