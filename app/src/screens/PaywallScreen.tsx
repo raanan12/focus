@@ -66,6 +66,7 @@ export function PaywallScreen({ navigation }: { navigation: any }) {
         <Text dim="secondary">{t('paywallBody')}</Text>
         <Text strong style={{ marginTop: space.lg }}>{price ? t('priceLine', { price }) : loading ? '…' : t('storeUnavailable')}</Text>
         <Text variant="caption" dim="tertiary">{t('securePayment')}</Text>
+        <Text variant="caption" dim="tertiary">{t('renewalNote')}</Text>
         {!purchasesAvailable && <Text variant="caption" dim="tertiary">{t('storeOnlyInBuild')}</Text>}
       </View>
       <View style={{ gap: space.md }}>
