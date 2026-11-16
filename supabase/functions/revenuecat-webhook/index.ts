@@ -5,7 +5,7 @@
 import { env, json, serviceClient } from '../_shared/common.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ENTITLEMENT = Deno.env.get('REVENUECAT_ENTITLEMENT') ?? 'pro';
+const ENTITLEMENT = Deno.env.get('REVENUECAT_ENTITLEMENT') ?? 'focus_pro';   // the entitlement identifier in RevenueCat
 
 function safeEqual(a: string, b: string) {
   if (a.length !== b.length) return false;

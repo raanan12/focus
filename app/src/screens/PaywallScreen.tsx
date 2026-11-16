@@ -7,6 +7,7 @@ import { Button, IconButton, Text } from '../components/ui';
 import { space, useTheme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
+import { privacyUrl } from '../lib/links';
 import { getSubscriptionPackage, purchase, purchasesAvailable, restore } from '../lib/purchases';
 
 const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
@@ -22,7 +23,7 @@ async function waitForAccess(): Promise<boolean> {
 }
 
 export function PaywallScreen({ navigation }: { navigation: any }) {
-  const th = useTheme(); const { t } = useI18n(); const insets = useSafeAreaInsets();
+  const th = useTheme(); const { t, lang } = useI18n(); const insets = useSafeAreaInsets();
   const [pkg, setPkg] = useState<PurchasesPackage | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
@@ -72,7 +73,10 @@ export function PaywallScreen({ navigation }: { navigation: any }) {
           <Button title={price ? t('subscribeFor', { price }) : t('subscribe')} loading={busy === 'buy'} disabled={!pkg || busy !== null} onPress={buy} />
         )}
         <Button title={t('restorePurchases')} variant="ghost" loading={busy === 'restore'} disabled={!purchasesAvailable || busy !== null} onPress={doRestore} />
-        <Text variant="caption" dim="tertiary" style={{ textAlign: 'center' }} onPress={() => Linking.openURL(TERMS_URL)}>{t('termsOfUse')}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: space.lg }}>
+          <Text variant="caption" dim="tertiary" onPress={() => Linking.openURL(TERMS_URL)}>{t('termsOfUse')}</Text>
+          <Text variant="caption" dim="tertiary" onPress={() => Linking.openURL(privacyUrl(lang))}>{t('privacyPolicy')}</Text>
+        </View>
       </View>
     </View>
   );

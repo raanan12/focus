@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,7 @@ import { useAccess } from '../lib/access';
 import { store } from '../lib/store';
 import { supabase } from '../lib/supabase';
 import { manageSubscriptions } from '../lib/purchases';
+import { privacyUrl } from '../lib/links';
 import * as Clipboard from 'expo-clipboard';
 import { askNotificationPermission } from '../lib/reminders';
 
@@ -105,10 +106,11 @@ export function SettingsScreen({ navigation }: { navigation: any }) {
         <Section title={t('subscription')}>
           <Text>{planLine}</Text>
           {subscribed
-            ? <Button variant="secondary" title={t('cancelSub')} onPress={() => { void manageSubscriptions().catch(() => Linking.openURL('https://apps.apple.com/account/subscriptions')); }} />
+            ? <Button variant="secondary" title={t('cancelSub')} onPress={() => { void manageSubscriptions().catch(() => Linking.openURL(Platform.OS === 'ios' ? 'https://apps.apple.com/account/subscriptions' : 'https://play.google.com/store/account/subscriptions')); }} />
             : <Button title={t('subscribe')} onPress={() => navigation.navigate('Paywall')} />}
         </Section>
         <Section title=" ">
+          <Button variant="secondary" icon="shield-checkmark-outline" title={t('privacyPolicy')} onPress={() => { void Linking.openURL(privacyUrl(lang)); }} />
           <Button variant="secondary" icon="log-out-outline" title={t('signOut')} onPress={() => signOut()} />
           <Button variant="ghost" title={t('deleteAccount')} onPress={() => { setConfirmText(''); setDelOpen(true); }} style={{ }} />
         </Section>

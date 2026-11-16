@@ -1,18 +1,19 @@
-// Subscriptions via Apple In-App Purchase, managed by RevenueCat.
+// Subscriptions via Apple In-App Purchase / Google Play Billing, managed by RevenueCat.
 // The RevenueCat app user id is the Supabase user id; a RevenueCat webhook (Edge Function
 // `revenuecat-webhook`) mirrors the entitlement into public.subscriptions, which is what has_access() reads.
 import { Platform } from 'react-native';
 import Purchases, { type PurchasesPackage } from 'react-native-purchases';
 
-const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
+// Public SDK keys (safe to ship): appl_... for iOS, goog_... for Android.
+const API_KEY = (Platform.OS === 'ios' ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY : process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY) ?? '';
 let configured = false;
 
-/** Store purchases are only available on iOS builds with a RevenueCat key. */
-export const purchasesAvailable = Platform.OS === 'ios' && IOS_KEY.length > 0;
+/** Store purchases are only available in store builds (iOS / Android) that have a RevenueCat key. */
+export const purchasesAvailable = (Platform.OS === 'ios' || Platform.OS === 'android') && API_KEY.length > 0;
 
 function ensureConfigured() {
   if (!purchasesAvailable) return false;
-  if (!configured) { Purchases.configure({ apiKey: IOS_KEY }); configured = true; }
+  if (!configured) { Purchases.configure({ apiKey: API_KEY }); configured = true; }
   return true;
 }
 

@@ -29,7 +29,7 @@ supabase/   schema.sql (טבלאות + RLS + פונקציות) ו-Edge Functions
 1. App Store Connect → Business → Agreements, Tax, and Banking: אשרו את Paid Applications Agreement והזינו בנק ומס.
 2. App Store Connect → האפליקציה → Subscriptions: צרו Subscription Group ומוצר חודשי (למשל `focus_monthly`, $1).
 3. RevenueCat (revenuecat.com): צרו פרויקט ואפליקציית iOS (bundle id `com.focus.notes`), חברו את App Store Connect (App-Specific Shared Secret / In-App Purchase Key), ייבאו את המוצר.
-   - Entitlements → צרו entitlement בשם **`pro`** וצרפו אליו את המוצר.
+   - Entitlements → צרו entitlement בשם **`focus_pro`** וצרפו אליו את המוצר.
    - Offerings → ה-offering ה-**current** מכיל package אחד עם המוצר.
 4. RevenueCat → Project settings → API keys: העתיקו את ה-**Public iOS SDK key** (`appl_...`) ל-`app/eas.json` תחת `EXPO_PUBLIC_REVENUECAT_IOS_KEY`.
 5. RevenueCat → Integrations → Webhooks → Add: כתובת `https://<PROJECT_REF>.supabase.co/functions/v1/revenuecat-webhook`, ובשדה Authorization header: `Bearer <סוד-אקראי-ארוך>`.

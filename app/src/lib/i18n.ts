@@ -31,8 +31,8 @@ const en: Dict = {
   deleteAccountConfirm: 'Yes, delete everything', typeDelete: 'Type DELETE to confirm',
   planTrial: 'Free trial · {days} days left', planActive: 'Active · renews {date}', planEnding: 'Ends {date}', planNone: 'No active plan',
   subscribe: 'Subscribe · $1 / month', cancelSub: 'Manage subscription', cancelSubQ: 'Cancel your subscription?', cancelSubBody: 'You keep access until the end of the paid period.',
-  priceLine: '{price} per month. Cancel any time in your Apple ID settings.', paywallTitle: 'Keep creating notes', paywallBody: 'Your free trial ended. Subscribe to create and share new notes. Partners you invite never pay.',
-  securePayment: 'Payment is handled securely by Apple.', subscribeFor: 'Subscribe · {price} / month', restorePurchases: 'Restore purchases', purchasePending: 'Your purchase is being confirmed. Access will unlock in a moment.', storeUnavailable: 'The subscription is not available right now.', storeOnlyInBuild: 'Purchases work only in the App Store / TestFlight build.', termsOfUse: 'Terms of Use',
+  priceLine: '{price} per month. Cancel any time in your store account settings.', paywallTitle: 'Keep creating notes', paywallBody: 'Your free trial ended. Subscribe to create and share new notes. Partners you invite never pay.',
+  securePayment: 'Payment is handled securely by the App Store / Google Play.', subscribeFor: 'Subscribe · {price} / month', restorePurchases: 'Restore purchases', purchasePending: 'Your purchase is being confirmed. Access will unlock in a moment.', storeUnavailable: 'The subscription is not available right now.', storeOnlyInBuild: 'Purchases work only in the App Store / Google Play (or TestFlight) build.', termsOfUse: 'Terms of Use', privacyPolicy: 'Privacy Policy',
   offline: 'Offline — changes will sync', syncing: 'Syncing…', error: 'Something went wrong', retry: 'Try again', ok: 'OK',
   assigned: 'Added by {name}', you: 'You',
 };
@@ -63,8 +63,8 @@ const he: Dict = {
   deleteAccountConfirm: 'כן, מחק הכול', typeDelete: 'הקלידו DELETE לאישור',
   planTrial: 'תקופת ניסיון · נותרו {days} ימים', planActive: 'פעיל · מתחדש ב-{date}', planEnding: 'מסתיים ב-{date}', planNone: 'אין מנוי פעיל',
   subscribe: 'הרשמה · $1 לחודש', cancelSub: 'ניהול מנוי', cancelSubQ: 'לבטל את המנוי?', cancelSubBody: 'הגישה נשמרת עד סוף התקופה ששולמה.',
-  priceLine: '{price} לחודש. אפשר לבטל בכל עת בהגדרות ה-Apple ID.', paywallTitle: 'ממשיכים ליצור פתקים', paywallBody: 'תקופת הניסיון הסתיימה. הירשמו כדי ליצור ולשתף פתקים חדשים. שותפים שמוזמנים לא משלמים.',
-  securePayment: 'התשלום מתבצע בצורה מאובטחת דרך Apple.', subscribeFor: 'הרשמה · {price} לחודש', restorePurchases: 'שחזור רכישות', purchasePending: 'הרכישה מאושרת, הגישה תיפתח בעוד רגע.', storeUnavailable: 'המנוי לא זמין כרגע.', storeOnlyInBuild: 'רכישות עובדות רק בגרסת App Store / TestFlight.', termsOfUse: 'תנאי שימוש',
+  priceLine: '{price} לחודש. אפשר לבטל בכל עת בהגדרות החשבון בחנות.', paywallTitle: 'ממשיכים ליצור פתקים', paywallBody: 'תקופת הניסיון הסתיימה. הירשמו כדי ליצור ולשתף פתקים חדשים. שותפים שמוזמנים לא משלמים.',
+  securePayment: 'התשלום מתבצע בצורה מאובטחת דרך App Store / Google Play.', subscribeFor: 'הרשמה · {price} לחודש', restorePurchases: 'שחזור רכישות', purchasePending: 'הרכישה מאושרת, הגישה תיפתח בעוד רגע.', storeUnavailable: 'המנוי לא זמין כרגע.', storeOnlyInBuild: 'רכישות עובדות רק בגרסת App Store / Google Play (או TestFlight).', termsOfUse: 'תנאי שימוש', privacyPolicy: 'מדיניות פרטיות',
   offline: 'אין חיבור — השינויים יסונכרנו', syncing: 'מסנכרן…', error: 'משהו השתבש', retry: 'נסו שוב', ok: 'אישור',
   assigned: 'נוסף ע"י {name}', you: 'אני',
 };
@@ -95,8 +95,8 @@ const ar: Dict = {
   deleteAccountConfirm: 'نعم، احذف كل شيء', typeDelete: 'اكتب DELETE للتأكيد',
   planTrial: 'فترة تجريبية · متبقي {days} يومًا', planActive: 'نشط · يتجدد في {date}', planEnding: 'ينتهي في {date}', planNone: 'لا يوجد اشتراك نشط',
   subscribe: 'اشترك · $1 شهريًا', cancelSub: 'إدارة الاشتراك', cancelSubQ: 'إلغاء اشتراكك؟', cancelSubBody: 'تحتفظ بالوصول حتى نهاية الفترة المدفوعة.',
-  priceLine: '{price} شهريًا. يمكنك الإلغاء في أي وقت من إعدادات Apple ID.', paywallTitle: 'تابع إنشاء الملاحظات', paywallBody: 'انتهت الفترة التجريبية. اشترك لإنشاء ومشاركة ملاحظات جديدة. الشركاء المدعوون لا يدفعون.',
-  securePayment: 'تتم معالجة الدفع بأمان عبر Apple.', subscribeFor: 'اشترك · {price} شهريًا', restorePurchases: 'استعادة المشتريات', purchasePending: 'جارٍ تأكيد عملية الشراء. سيُفتح الوصول بعد لحظات.', storeUnavailable: 'الاشتراك غير متاح حاليًا.', storeOnlyInBuild: 'المشتريات تعمل فقط في نسخة App Store / TestFlight.', termsOfUse: 'شروط الاستخدام',
+  priceLine: '{price} شهريًا. يمكنك الإلغاء في أي وقت من إعدادات حسابك في المتجر.', paywallTitle: 'تابع إنشاء الملاحظات', paywallBody: 'انتهت الفترة التجريبية. اشترك لإنشاء ومشاركة ملاحظات جديدة. الشركاء المدعوون لا يدفعون.',
+  securePayment: 'تتم معالجة الدفع بأمان عبر App Store / Google Play.', subscribeFor: 'اشترك · {price} شهريًا', restorePurchases: 'استعادة المشتريات', purchasePending: 'جارٍ تأكيد عملية الشراء. سيُفتح الوصول بعد لحظات.', storeUnavailable: 'الاشتراك غير متاح حاليًا.', storeOnlyInBuild: 'المشتريات تعمل فقط في نسخة App Store / Google Play (أو TestFlight).', termsOfUse: 'شروط الاستخدام', privacyPolicy: 'سياسة الخصوصية',
   offline: 'غير متصل — ستتم المزامنة لاحقًا', syncing: 'جارٍ المزامنة…', error: 'حدث خطأ ما', retry: 'حاول مجددًا', ok: 'حسنًا',
   assigned: 'أضافها {name}', you: 'أنا',
 };
