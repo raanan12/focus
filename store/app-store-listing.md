@@ -83,3 +83,44 @@ Not collected: location, contacts, photos, health, browsing history, advertising
 4. Dark mode home
 5. Sign-in screen or paywall
 Take them in the TestFlight build on a real device (side button + volume up). Hebrew UI for the Hebrew listing, English UI for the English listing.
+
+---
+# Google Play listing (Play Console)
+
+## URLs
+- Privacy policy: https://focus-neon-nu.vercel.app/privacy?lang=en
+- Account deletion URL (Data safety): https://focus-neon-nu.vercel.app/account-deletion?lang=en
+- Support e-mail: appfocus9@gmail.com   Website: https://focus-neon-nu.vercel.app
+
+## English
+**App name (max 30):** Focus: Shared Notes & Tasks
+**Short description (max 80):** Shared notes and checklists. One list, many partners.
+**Full description (max 4000):**
+Focus is the simplest way to keep notes and tasks — and to share them.
+
+• Colorful notes and checklists, organized the way you like
+• Share any note with a partner, family member or teammate — by e-mail, share code or link
+• Everyone sees changes instantly and can add tasks
+• Each partner gets their own color, so you always know who added what
+• Due-date reminders so nothing slips through
+• Works offline and syncs when you're back online
+• Beautiful light and dark modes, in Hebrew, English and Arabic (full right-to-left support)
+• Sign in with Google — no passwords to remember
+
+Try Focus free for 14 days. After the trial, a monthly subscription keeps you creating and sharing new notes. People you invite never pay.
+
+Subscription: Focus Premium, monthly, billed through Google Play. It renews automatically until you cancel in Google Play > Payments & subscriptions.
+
+## עברית
+**שם:** פוקוס – פתקים ומשימות
+**תיאור קצר:** פתקים ורשימות משימות משותפים. רשימה אחת, שותפים מרובים.
+**תיאור מלא:** (כמו התיאור העברי לעיל, עם "התחברות עם Google" ו"המנוי מחויב דרך Google Play ומתחדש עד שמבטלים ב-Google Play ← תשלומים ומינויים").
+
+## Setup answers
+- App category: Productivity · Tags: Notes, To-do list
+- Free app, contains in-app purchases (subscription)
+- Ads: No
+- Target audience: 18 and over (not directed to children)
+- Content rating questionnaire: category "Utility, Productivity"; no violence, sexual content, drugs, gambling. "Users can share content with each other": only privately with invited people.
+- App access: login required. Instructions: "Tap Continue with Google and sign in with any Google account. A new account gets a 14-day free trial that unlocks all features."
+- Data safety: collects Name, E-mail address, User IDs, User-generated content (notes/tasks), Purchase history. Purpose: App functionality / Account management. Not shared with third parties for their own use (service providers only act on our behalf). Data encrypted in transit: Yes. Users can request deletion: Yes (in app + web URL above).

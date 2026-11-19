@@ -23,10 +23,30 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pd2lycXRxa3hydHJlcnZ2ZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0NzAzMzMsImV4cCI6MjExMDA0NjMzM30.ihQWi6NbVED08cYSH4Mkl36JCpzlMHAm_gLawqkN0bw",
         "EXPO_PUBLIC_INVITE_BASE_URL": "https://focus-neon-nu.vercel.app",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_mvvKHIlylawxKNRWxdQchTSgMaj"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://miwirqtqkxrtrervveig.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pd2lycXRxa3hydHJlcnZ2ZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0NzAzMzMsImV4cCI6MjExMDA0NjMzM30.ihQWi6NbVED08cYSH4Mkl36JCpzlMHAm_gLawqkN0bw",
+        "EXPO_PUBLIC_INVITE_BASE_URL": "https://focus-neon-nu.vercel.app",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_mvvKHIlylawxKNRWxdQchTSgMaj"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }
